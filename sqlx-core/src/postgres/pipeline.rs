@@ -251,7 +251,6 @@ impl PgConnection {
                         // patch holes created during encoding
                         arguments.apply_patches(conn, &metadata.parameters).await?;
 
-                        // apply patches use fetch_optional thaht may produce `PortalSuspended` message,
                         // consume messages til `ReadyForQuery` before bind and execute
                         conn.wait_until_ready().await?;
                         prepared.push((statement, arguments));
@@ -297,6 +296,16 @@ impl PgConnection {
                 });
             });
 
+        // From https://www.postgresql.org/docs/current/protocol-flow.html:
+        //
+        // "An unnamed portal is destroyed at the end of the transaction, or as
+        // soon as the next Bind statement specifying the unnamed portal as
+        // destination is issued. (Note that a simple Query message also
+        // destroys the unnamed portal."
+
+        // we ask the database server to close the unnamed portal and free the associated resources
+        // earlier - after the execution of the current query.
+        self.stream.write(message::Close::Portal(None));
         // finally, [Sync] asks postgres to process the messages that we sent and respond with
         // a [ReadyForQuery] message when it's completely done.
         self.write_sync();
@@ -315,10 +324,17 @@ impl PgConnection {
                     MessageFormat::BindComplete
                     | MessageFormat::ParseComplete
                     | MessageFormat::ParameterDescription
-                    | MessageFormat::NoData => {
+                    | MessageFormat::NoData
+                    // unnamed portal has been closed
+                    | MessageFormat::CloseComplete
+                     => {
                         // harmless messages to ignore
                     }
 
+                    // "Execute phase is always terminated by the appearance of
+                    // exactly one of these messages: CommandComplete,
+                    // EmptyQueryResponse (if the portal was created from an
+                    // empty query string), ErrorResponse, or PortalSuspended"
                     MessageFormat::CommandComplete => {
                         // a SQL command completed normally
                         let cc: CommandComplete = message.decode()?;
@@ -345,6 +361,14 @@ impl PgConnection {
                     MessageFormat::EmptyQueryResponse => {
                         // empty query string passed to an unprepared execute
                     }
+
+                    // Message::ErrorResponse is handled in self.stream.recv()
+
+                    // incomplete query execution has finished
+                    //
+                    // can't happen in the current implementation
+                    // - pipeline executes statements till completion
+                    MessageFormat::PortalSuspended => {}
 
                     MessageFormat::RowDescription => {
                         // indicates that a *new* set of rows are about to be returned
