@@ -7,8 +7,8 @@ This Cargo project implements various benchmarks for SQLx using
 ### Available Benchmarks
 
 * Group `pg_pool`: benchmarks `sqlx::Pool` against a PostgreSQL server.
-    * `DATABASE_URL` must be set (or in `.env`) pointing to a PostgreSQL server. 
-    It should preferably be running on the same machine as the benchmarks to reduce latency. 
+    * `DATABASE_URL` must be set (or in `.env`) pointing to a PostgreSQL server.
+    It should preferably be running on the same machine as the benchmarks to reduce latency.
     * The `postgres` feature must be enabled for this benchmark to run.
     * Benchmarks:
         * `bench_pgpool_acquire`: benchmarks `Pool::acquire()` when many concurrent tasks are also using
@@ -17,6 +17,12 @@ This Cargo project implements various benchmarks for SQLx using
         also calling `acquire()` and holding the acquired connection for 500µs each before releasing
         it back to the pool. The pool is created with `.min_connections(50).max_connections(50)` so we shouldn't
         be measuring anything but the actual overhead of `Pool`'s bookkeeping.
+* Group `pg_pipeline`: benchmarks `sqlx::postgres::PgExtendedQueryPipeline` against issuing queries sequentially one by one.
+    * `DATABASE_URL` must be set (or in `.env`) pointing to a PostgreSQL server.
+        * Example usage for workspace root:
+
+            $ DATABASE_URL="postgres://postgres:password@localhost:CHANGEME/sqlx" cargo bench -p sqlx-bench --bench pg_pipeline --features=runtime-tokio-rustls,postgres,migrate,uuid
+
 
 ### Running
 
@@ -27,7 +33,7 @@ cargo bench --features runtime-tokio-native-tls
 cargo bench --features runtime-async-std-rustls
 ```
 
-When complete, the benchmark results will be in `target/criterion/`. 
+When complete, the benchmark results will be in `target/criterion/`.
 Open `target/criterion/report/index.html` or pick one of the benchmark subfolders and open
 `report/index.html` there to view the results.
 

@@ -2753,6 +2753,7 @@ dependencies = [
  "once_cell",
  "sqlx",
  "sqlx-rt",
+ "uuid",
 ]
 
 [[package]]
@@ -3451,6 +3452,8 @@ version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd6469f4314d5f1ffec476e05f17cc9a78bc7a27a6a857842170bdf8d6f98d2f"
 dependencies = [
+ "getrandom",
+ "rand 0.8.5",
  "serde",
 ]
 

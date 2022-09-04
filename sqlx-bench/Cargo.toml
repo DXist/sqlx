@@ -7,27 +7,17 @@ publish = false
 
 [features]
 runtime-actix-native-tls = ["runtime-tokio-native-tls"]
-runtime-async-std-native-tls = [
-    "sqlx/runtime-async-std-native-tls",
-    "sqlx-rt/runtime-async-std-native-tls",
-]
-runtime-tokio-native-tls = [
-    "sqlx/runtime-tokio-native-tls",
-    "sqlx-rt/runtime-tokio-native-tls",
-]
+runtime-async-std-native-tls = ["sqlx/runtime-async-std-native-tls", "sqlx-rt/runtime-async-std-native-tls"]
+runtime-tokio-native-tls = ["sqlx/runtime-tokio-native-tls", "sqlx-rt/runtime-tokio-native-tls"]
 
 runtime-actix-rustls = ["runtime-tokio-rustls"]
-runtime-async-std-rustls = [
-    "sqlx/runtime-async-std-rustls",
-    "sqlx-rt/runtime-async-std-rustls",
-]
-runtime-tokio-rustls = [
-    "sqlx/runtime-tokio-rustls",
-    "sqlx-rt/runtime-tokio-rustls",
-]
+runtime-async-std-rustls = ["sqlx/runtime-async-std-rustls", "sqlx-rt/runtime-async-std-rustls"]
+runtime-tokio-rustls = ["sqlx/runtime-tokio-rustls", "sqlx-rt/runtime-tokio-rustls"]
 
 postgres = ["sqlx/postgres"]
 sqlite = ["sqlx/sqlite"]
+migrate = ["sqlx/migrate"]
+uuid = ["dep:uuid", "sqlx/uuid"]
 
 [dependencies]
 criterion = "0.3.3"
@@ -35,6 +25,7 @@ dotenvy = "0.15.0"
 once_cell = "1.4"
 sqlx = { version = "0.6", path = "../", default-features = false, features = ["macros"] }
 sqlx-rt = { version = "0.6", path = "../sqlx-rt", default-features = false }
+uuid = { version = "1", optional = true, features = ["v4", "fast-rng"] }
 
 chrono = "0.4.19"
 
@@ -42,6 +33,11 @@ chrono = "0.4.19"
 name = "pg_pool"
 harness = false
 required-features = ["postgres"]
+
+[[bench]]
+name = "pg_pipeline"
+harness = false
+required-features = ["postgres", "migrate", "uuid"]
 
 [[bench]]
 name = "sqlite_fetch_all"
