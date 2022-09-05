@@ -139,10 +139,11 @@ fn do_bench_single_queries(pool: &PgPool) {
     .bind("test comment");
 
     let _ = sqlx_rt::block_on(async {
-        let mut conn = pool.acquire().await?;
-        user_insert_query.execute(&mut conn).await?;
-        post_insert_query.execute(&mut conn).await?;
-        comment_insert_query.execute(&mut conn).await
+        let mut tx = pool.begin().await?;
+        user_insert_query.execute(&mut tx).await?;
+        post_insert_query.execute(&mut tx).await?;
+        comment_insert_query.execute(&mut tx).await?;
+        tx.commit().await
     })
     .expect("no errors");
 }
